@@ -255,6 +255,13 @@ public class PhysicalGameStatePanel extends JPanel {
 
 
     public void paint(Graphics g) {
+
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         super.paint(g);
         Graphics2D g2d = (Graphics2D)g;
         if (gs!=null) {
@@ -271,6 +278,9 @@ public class PhysicalGameStatePanel extends JPanel {
             int y1 = Math.max(m_mouse_selection_y0, m_mouse_selection_y1);
             g.drawRect(x0, y0, x1 - x0, y1 - y0);
         }
+
+
+
     }
 
 
