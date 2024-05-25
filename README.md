@@ -1,0 +1,2 @@
+# MicroRTS
+Game AI project
