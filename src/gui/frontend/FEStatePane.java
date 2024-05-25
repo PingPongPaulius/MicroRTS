@@ -7,6 +7,7 @@
 package gui.frontend;
 
 import ai.BranchingFactorCalculatorBigInteger;
+import ai.PauliusBots.PauliusTest;
 import ai.core.AI;
 import ai.core.AIWithComputationBudget;
 import ai.core.ContinuingAI;
@@ -141,6 +142,7 @@ public class FEStatePane extends JPanel {
                    POLightRush.class,
                    POHeavyRush.class,
                    PORangedRush.class,
+            PauliusTest.class,
                    WorkerRushPlusPlus.class,
                    CRush_V1.class,
                    CRush_V2.class,
