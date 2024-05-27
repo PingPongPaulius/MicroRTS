@@ -61,11 +61,13 @@ public class PauliusTest extends AIWithComputationBudget {
         PlayerAction playerAction = new PlayerAction();
         if (!gs.canExecuteAnyAction(player)) return new PlayerAction();
         // Get Units Ready for action. Copied from RandomSingleUnitAI Command
-        ArrayList<Unit> unitsReadyForAction = getUnitsReadyForAction(gs, player);
+        HashSet<Unit> unitsReadyForAction = getUnitsReadyForAction(gs, player);
         possibleLegalMovesThisFrame.clear();
         getUnitPossibleMoves(gs, player);
+
         // Go through each free unit and assign it an action.
         for(Unit unit: unitsReadyForAction) {
+
             List<UnitAction> possibleUnitActions = possibleLegalMovesThisFrame.get(unit.getID());
             ArrayList<UnitAction> actionsTried = actionRanks.getOrDefault(unit.getID(), new ArrayList<>());
 
@@ -82,30 +84,55 @@ public class PauliusTest extends AIWithComputationBudget {
 
             if(unitIsIdle){
                 ArrayList<UnitAction> bestUnitActions = actionRanks.get(unit.getID());
-                for(UnitAction action: bestUnitActions){
-                    if(playerAction.getAction(unit) == null && possibleUnitActions.contains(action) && legalAction(gs, unit, action)){
-                        playerAction.addUnitAction(unit, action);
-                        break;
-                    }
-                }
+                playerAction.addUnitAction(unit, this.findBestAction(bestUnitActions, possibleUnitActions));
+                break;
             }
+
         }
 
+        playerAction.fillWithNones(gs, player, 10);
         return playerAction;
     }
     // This will be called by the microRTS GUI to get the
     // list of parameters that this bot wants exposed
     // in the GUI.
 
+    protected UnitAction findBestAction(List<UnitAction> bestActions, List<UnitAction> possibleActions){
+
+        int bestIndex = Integer.MAX_VALUE;
+        UnitAction action = possibleActions.get(0);
+
+        for(UnitAction possibleAction: possibleActions){
+            for(UnitAction bestAction: bestActions){
+                int actionIndex = bestActions.indexOf(possibleAction);
+                if(possibleAction.equals(bestAction) && bestActions.indexOf(possibleAction) < bestIndex){
+                    bestIndex = actionIndex;
+                    action = possibleAction;
+                }
+            }
+        }
+
+        return action;
+    }
+
+    protected void evalAction(UnitAction action, GameState gameState, int player){
+
+        GameState fakeState = gameState.clone();
+        fakeState.forceExecuteAllActions();
+
+        int resource = fakeState.getPlayer(player).getResources();
+
+    }
+
     protected boolean legalAction(GameState gs, Unit unit, UnitAction action){
         return gs.isUnitActionAllowed(unit, action) && unit.canExecuteAction(action, gs);
     }
 
-    protected ArrayList<Unit> getUnitsReadyForAction(GameState gs, int player){
+    protected HashSet<Unit> getUnitsReadyForAction(GameState gs, int player){
 
         PhysicalGameState pgs = gs.getPhysicalGameState();
 
-        ArrayList<Unit> unitsReadyForAction = new ArrayList<>();
+        HashSet<Unit> unitsReadyForAction = new HashSet<>();
         for(Unit u:pgs.getUnits()) {
             if (u.getPlayer()==player) {
                 if (gs.getActionAssignment(u)==null) {
