@@ -3,10 +3,7 @@ package ai.PauliusBots;
 import ai.core.AI;
 import ai.core.AIWithComputationBudget;
 import ai.core.ParameterSpecification;
-import rts.GameState;
-import rts.PlayerAction;
-import rts.PlayerActionGenerator;
-import rts.UnitAction;
+import rts.*;
 import rts.units.Unit;
 import rts.units.UnitTypeTable;
 import util.Pair;
@@ -30,7 +27,8 @@ public class PauliusTest extends AIWithComputationBudget {
     Strategy is to pick best action and rank it.
      */
 
-    HashMap<Long, HashSet<UnitAction>> actionRanks;
+    private HashMap<Long, HashSet<UnitAction>> actionRanks;
+    private HashSet<PlayerAction> playerActions;
 
     public PauliusTest(UnitTypeTable utt) {
 
@@ -38,6 +36,7 @@ public class PauliusTest extends AIWithComputationBudget {
         m_utt = utt;
 
         actionRanks = new HashMap<>();
+        playerActions = new HashSet<>();
 
     }
 
@@ -59,43 +58,24 @@ public class PauliusTest extends AIWithComputationBudget {
     public PlayerAction getAction(int player, GameState gs) throws Exception {
 
         PlayerAction playerAction = new PlayerAction();
-
         if (!gs.canExecuteAnyAction(player)) return new PlayerAction();
 
-        PlayerActionGenerator actionGenerator = new PlayerActionGenerator(gs, player);
-        List<Pair<Unit,List<UnitAction>>> possibleMoves = actionGenerator.getChoices();
+        ArrayList<Unit> unitsReadyForAction = getUnitsReadyForAction(gs, player);
 
-        for(Pair<Unit, List<UnitAction>> pair: possibleMoves) {
+        for(Unit unit: unitsReadyForAction) {
 
-            Unit unit = pair.m_a;
-            List<UnitAction> possibleUnitActions = pair.m_b;
+            List<UnitAction> possibleUnitActions = unit.getUnitActions(gs);
 
-            boolean unitHasAction = false;
+            HashSet<UnitAction> actionsTried = actionRanks.getOrDefault(unit.getID(), new HashSet<UnitAction>());
 
-            if (actionRanks.containsKey(unit.getID())) {
-                    HashSet<UnitAction> actionsTried = actionRanks.get(unit.getID());
-                    for (UnitAction action : possibleUnitActions) {
+            for (UnitAction action : possibleUnitActions) {
+                if (!actionsTried.contains(action) && playerAction.getAction(unit) == null && unit.canExecuteAction(action, gs)) {
 
-                        if(unitHasAction) continue;
+                    actionsTried.add(action);
+                    actionRanks.put(unit.getID(), actionsTried);
+                    playerAction.addUnitAction(unit, action);
 
-                        if (!actionsTried.contains(action)) {
-                            if(unit.canExecuteAction(action, gs)) {
-                                if(!unit.getType().canMove) {
-                                    System.out.println("UNIT: " + unit);
-                                    System.out.println("ACTIONS: " + actionsTried);
-                                    System.out.println("NEXT ACTION: " + action);
-                                }
-                                actionsTried.add(action);
-                                playerAction.addUnitAction(unit, action);
-                                actionRanks.put(unit.getID(), actionsTried);
-                                unitHasAction = true;
-                            }
-                        }
-                    }
-            } else {
-                PlayerAction action = actionGenerator.getRandom();
-                playerAction = playerAction.merge(action);
-                actionRanks.put(unit.getID(), new HashSet<>(List.of(action.getAction(unit))));
+                }
             }
 
         }
@@ -106,6 +86,22 @@ public class PauliusTest extends AIWithComputationBudget {
     // This will be called by the microRTS GUI to get the
     // list of parameters that this bot wants exposed
     // in the GUI.
+
+    protected ArrayList<Unit> getUnitsReadyForAction(GameState gs, int player){
+
+        PhysicalGameState pgs = gs.getPhysicalGameState();
+
+        ArrayList<Unit> unitsReadyForAction = new ArrayList<>();
+        for(Unit u:pgs.getUnits()) {
+            if (u.getPlayer()==player) {
+                if (gs.getActionAssignment(u)==null) {
+                    unitsReadyForAction.add(u);
+                }
+            }
+        }
+
+        return unitsReadyForAction;
+    }
 
     public List<ParameterSpecification> getParameters() {
         return new ArrayList<>();

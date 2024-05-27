@@ -28,9 +28,8 @@ public class PlayerAction {
     
     /**
      * Represents the resources used by the player action
-     * TODO rename the field
      */
-    ResourceUsage r = new ResourceUsage();
+    ResourceUsage resource = new ResourceUsage();
     
     /**
      * 
@@ -98,7 +97,7 @@ public class PlayerAction {
      * @return
      */
     public ResourceUsage getResourceUsage() {
-        return r;
+        return resource;
     }
     
     /**
@@ -106,7 +105,7 @@ public class PlayerAction {
      * @param a_r
      */
     public void setResourceUsage(ResourceUsage a_r) {
-        r = a_r;
+        resource = a_r;
     }
     
     /**
@@ -145,7 +144,7 @@ public class PlayerAction {
         PlayerAction merge = new PlayerAction();
         merge.actions.addAll(actions);
         merge.actions.addAll(a.actions);
-        merge.r = r.mergeIntoNew(a.r);
+        merge.resource = resource.mergeIntoNew(a.resource);
         
         return merge;
     }
@@ -182,9 +181,9 @@ public class PlayerAction {
         
 		for (UnitAction ua : lu) {
 			ResourceUsage r2 = ua.resourceUsage(u, s.getPhysicalGameState());
-			if (r.consistentWith(r2, s)) {
+			if (resource.consistentWith(r2, s)) {
 				PlayerAction a = new PlayerAction();
-				a.r = r.mergeIntoNew(r2);
+				a.resource = resource.mergeIntoNew(r2);
 				a.actions.addAll(actions);
 				a.addUnitAction(u, ua);
 				l.add(a);
@@ -203,7 +202,7 @@ public class PlayerAction {
      * @return
      */
     public boolean consistentWith(ResourceUsage u, GameState gs) {
-        return r.consistentWith(u, gs);
+        return resource.consistentWith(u, gs);
     }
     
     
@@ -267,7 +266,7 @@ public class PlayerAction {
         for(Pair<Unit,UnitAction> tmp:actions) {
             clone.actions.add(new Pair<>(tmp.m_a, tmp.m_b));
         }
-        clone.r = r.clone();
+        clone.resource = resource.clone();
         return clone;
     }
         
@@ -276,7 +275,7 @@ public class PlayerAction {
      */
     public void clear() {
         actions.clear();
-        r = new ResourceUsage();
+        resource = new ResourceUsage();
     }
 
     

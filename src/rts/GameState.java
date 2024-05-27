@@ -449,7 +449,7 @@ public class GameState {
             UnitActionAssignment uaa = unitActions.get(u2);
             if (uaa!=null) {
                 ResourceUsage ru = uaa.action.resourceUsage(u2, pgs);
-                empty.r.merge(ru);
+                empty.resource.merge(ru);
             }
         }
 
@@ -473,7 +473,7 @@ public class GameState {
             UnitActionAssignment uaa = unitActions.get(u);
             if (uaa!=null) {
                 ResourceUsage ru = uaa.action.resourceUsage(u, pgs);
-                empty.r.merge(ru);
+                empty.resource.merge(ru);
             }
         }
         
@@ -502,7 +502,7 @@ public class GameState {
                 UnitActionAssignment uaa = unitActions.get(u);
                 if (uaa!=null) {
                     ResourceUsage ru = uaa.action.resourceUsage(u, pgs);
-                    empty.r.merge(ru);
+                    empty.resource.merge(ru);
                 }
 //            }
         }
