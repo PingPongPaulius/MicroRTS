@@ -27,8 +27,9 @@ public class PauliusTest extends AIWithComputationBudget {
     Strategy is to pick best action and rank it.
      */
 
-    private HashMap<Long, HashSet<UnitAction>> actionRanks;
+    private HashMap<Long, ArrayList<UnitAction>> actionRanks;
     private HashSet<PlayerAction> playerActions;
+    private HashMap<Long, List<UnitAction>> possibleLegalMovesThisFrame;
 
     public PauliusTest(UnitTypeTable utt) {
 
@@ -37,7 +38,7 @@ public class PauliusTest extends AIWithComputationBudget {
 
         actionRanks = new HashMap<>();
         playerActions = new HashSet<>();
-
+        possibleLegalMovesThisFrame = new HashMap<>();
     }
 
     // This will be called by microRTS when it wants to create new instances of this bot (e.g., to play multiple games).
@@ -59,33 +60,46 @@ public class PauliusTest extends AIWithComputationBudget {
 
         PlayerAction playerAction = new PlayerAction();
         if (!gs.canExecuteAnyAction(player)) return new PlayerAction();
-
+        // Get Units Ready for action. Copied from RandomSingleUnitAI Command
         ArrayList<Unit> unitsReadyForAction = getUnitsReadyForAction(gs, player);
-
+        possibleLegalMovesThisFrame.clear();
+        getUnitPossibleMoves(gs, player);
+        // Go through each free unit and assign it an action.
         for(Unit unit: unitsReadyForAction) {
+            List<UnitAction> possibleUnitActions = possibleLegalMovesThisFrame.get(unit.getID());
+            ArrayList<UnitAction> actionsTried = actionRanks.getOrDefault(unit.getID(), new ArrayList<>());
 
-            List<UnitAction> possibleUnitActions = unit.getUnitActions(gs);
-
-            HashSet<UnitAction> actionsTried = actionRanks.getOrDefault(unit.getID(), new HashSet<UnitAction>());
+            boolean unitIsIdle = true;
 
             for (UnitAction action : possibleUnitActions) {
-                if (!actionsTried.contains(action) && playerAction.getAction(unit) == null && unit.canExecuteAction(action, gs)) {
-
+                if (!actionsTried.contains(action) && playerAction.getAction(unit) == null) {
                     actionsTried.add(action);
                     actionRanks.put(unit.getID(), actionsTried);
                     playerAction.addUnitAction(unit, action);
-
+                    unitIsIdle = false;
                 }
             }
 
+            if(unitIsIdle){
+                ArrayList<UnitAction> bestUnitActions = actionRanks.get(unit.getID());
+                for(UnitAction action: bestUnitActions){
+                    if(playerAction.getAction(unit) == null && possibleUnitActions.contains(action) && legalAction(gs, unit, action)){
+                        playerAction.addUnitAction(unit, action);
+                        break;
+                    }
+                }
+            }
         }
 
         return playerAction;
-
     }
     // This will be called by the microRTS GUI to get the
     // list of parameters that this bot wants exposed
     // in the GUI.
+
+    protected boolean legalAction(GameState gs, Unit unit, UnitAction action){
+        return gs.isUnitActionAllowed(unit, action) && unit.canExecuteAction(action, gs);
+    }
 
     protected ArrayList<Unit> getUnitsReadyForAction(GameState gs, int player){
 
@@ -101,6 +115,23 @@ public class PauliusTest extends AIWithComputationBudget {
         }
 
         return unitsReadyForAction;
+    }
+
+    protected void getUnitPossibleMoves(GameState gs, int player) throws Exception {
+
+        PlayerActionGenerator playerActionGenerator = new PlayerActionGenerator(gs, player);
+        List<Pair<Unit, List<UnitAction>>> generatedMoves = playerActionGenerator.getChoices();
+        for(Pair<Unit, List<UnitAction>> allPossibleActions: generatedMoves){
+            ArrayList<UnitAction> legalActions = new ArrayList<>();
+            Unit unit = allPossibleActions.m_a;
+            for(UnitAction action: unit.getUnitActions(gs)){
+                if(legalAction(gs, unit, action)){
+                    legalActions.add(action);
+                }
+            }
+
+            this.possibleLegalMovesThisFrame.put(allPossibleActions.m_a.getID(), legalActions);
+        }
     }
 
     public List<ParameterSpecification> getParameters() {
